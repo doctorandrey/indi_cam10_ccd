@@ -42,8 +42,8 @@ bool frameReady = false;
 bool errorReadFlag;
 bool errorWriteFlag;
 
-static uint8_t bufim[1280*1024-1];
-static uint8_t bufim2[1280*1024-1];
+static uint8_t bufim[1280*1024];
+static uint8_t bufim2[1280*1024];
 
 static uint8_t FT_Out_Buffer[FT_OUT_BUFF];
 
@@ -259,7 +259,7 @@ bool cameraStartExposure(int startY, int numY, double duration, int gain, uint16
     cameraSetOffset(offset, autoOffset);
     cameraSetBlevel(blevel);
 
-    writes(0x32, 0x0F0F); // Test pattern
+    writes(0x32, Pattern); // Test pattern
     writes(0x07, 0x42); // Use test data - 0x42, default 0x02
 
     //dlit1 = round(duration*1000)+1000;
@@ -452,7 +452,7 @@ void *posExecute ( void *arg )
 
         buf = ftdi_read_data_modified( CAM10A, bufim, kolbyte);
 
-        fprintf( stderr,"ftdi_read_data, data size= %d\n", buf );
+        fprintf( stderr,"ftdi_read_data, data size= %d, %d, %d\n", buf, sizeof(bufim), kolbyte );
     }
     else
     {
@@ -516,6 +516,21 @@ bool readframe (int x0, int dx, int y0, int dy, bool komp)
     pthread_t t1;
     pthread_create ( &t1, NULL, posExecute, NULL );
     pthread_join(t1,NULL);
+
+    fprintf(stderr, "------ first 100 bytes dump ------\n");
+    for (int i = 0; i < 100; i++) {
+        if (i % 24 == 0)
+            fprintf(stderr, "\n");
+        fprintf(stderr, "%02x ", bufim[i]);
+    }
+    fprintf(stderr, "...\n");
+
+    FILE * fileID;
+    fileID = fopen("framedata_out.txt", "w");
+    for (int i = 0; i < sizeof(bufim); i++) {
+        fprintf(fileID, "%02x ", bufim[i]);
+    }
+    fclose(fileID);
 
     if (bufa < 1)
     {
@@ -597,8 +612,6 @@ void bytei (uint8_t val)
 void writep ()
 {
     //FILE * fileID;
-
-    //DWORD BytesWritten;
 
     if ( ftdi_write_data( CAM10B, FT_Out_Buffer, adress ) < 0 )
     {

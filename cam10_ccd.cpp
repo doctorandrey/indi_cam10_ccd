@@ -542,20 +542,22 @@ int main(int argc, char *argv[])
     int opt;
     int baud = 10;
     double exp = 1;
-    while ((opt = getopt (argc, argv, "e:b:")) != -1)
+    while ((opt = getopt (argc, argv, "e:b:p:")) != -1)
     {
         switch (opt)
         {
         case 'e':
             exp = atof (optarg);
             break;
-
         case 'b':
             baud = atoi (optarg);
             break;
+        case 'p':
+            Pattern = strtol(optarg, NULL, 16);
+            break;
 
         default: /* '?' */
-            fprintf(stderr, "Usage: %s [-e nsecs] [-b] baudrate\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-e exposure] [-b baudrate] [-p pattern]\n", argv[0]);
             exit(EXIT_FAILURE);
         }
     }

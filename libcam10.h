@@ -16,6 +16,8 @@
 extern "C" {
 #endif
 
+unsigned int Pattern;
+
 bool cameraConnect(void);
 bool cameraDisconnect(void); 
 bool cameraIsConnected(void);
