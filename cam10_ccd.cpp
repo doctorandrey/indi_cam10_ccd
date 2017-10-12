@@ -563,7 +563,7 @@ int main(int argc, char *argv[])
     }
 
 
-    if (cameraConnect()) {
+    if (cameraConnect() == EXIT_SUCCESS) {
         //cameraSetBaudrate(baud);
         //cameraSetOffset(0);
         //cameraSetGain(0);
