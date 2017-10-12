@@ -1,8 +1,8 @@
 # indi_cam10_ccd
 Making Indi driver for DIY Cam10 CMOS camera (Aptina/Micron MT9M001)
 
-Original code was written in Delphi by Gilmanov Rim (Гильманов Рим)
-Ascom driver was written by Sergiy Vakulenko
+Original code was written in Delphi by Gilmanov Rim (Гильманов Рим).
+Ascom driver was written by Sergiy Vakulenko.
 Their code is shared on Sergiy Vakulenko's Github:
 https://github.com/vakulenko/CAM10_software
 
