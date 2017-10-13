@@ -1,6 +1,8 @@
 #ifndef __LIBCAM10_H__
 #define __LIBCAM10_H__
 
+#define TESTING
+
 #define CAM10A_BAUDRATE 20
 #define CAM10B_BAUDRATE 5
 #define CAM10_GAIN      0
@@ -28,7 +30,7 @@ bool cameraSetGain (int val);
 bool cameraSetOffset (uint16_t val, bool aut);
 int  cameraGetError(void);
 uint8_t * cameraGetImage();
-//bool cameraSetBaudrate(struct ftdi_context *ftdi, int val);
+bool cameraSetBaudrateA(int val);
 bool cameraSetLibftdiTimers(int latA,int latB,int timerA,int timerB);
 
 #ifdef __cplusplus

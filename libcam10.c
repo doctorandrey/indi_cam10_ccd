@@ -110,11 +110,11 @@ bool cameraConnect()
         return EXIT_FAILURE;
     }
 
-//    if ( ftdi_set_bitmode ( CAM10A, 0x00, BITMODE_RESET ) < 0 )
-//    {
-//        fprintf ( stderr,"libftdi error reset interface A\n" );
-//        FT_OP_flag = false;
-//    }
+    //    if ( ftdi_set_bitmode ( CAM10A, 0x00, BITMODE_RESET ) < 0 )
+    //    {
+    //        fprintf ( stderr,"libftdi error reset interface A\n" );
+    //        FT_OP_flag = false;
+    //    }
 
     // BitBang channel 2
     if ( ftdi_set_bitmode ( CAM10B, 0xF7, BITMODE_SYNCBB ) < 0 )
@@ -136,16 +136,12 @@ bool cameraConnect()
     cameraSetLibftdiTimers ( CAM10_LATENCYA, CAM10_LATENCYB, CAM10_TIMERA, CAM10_TIMERB );
 
     //debug!
-    //CAM10A->readbuffer_chunksize = 64;
-
-
-    //debug!
     //if (ftdi_read_data_set_chunksize (CAM8A,256*1)<0 ) fprintf(stderr,"libftdi error set chunksize A\n");
 
-//    if ( ftdi_read_data_set_chunksize ( CAM10A, 1 << 14 ) < 0 )
-//    {
-//        fprintf ( stderr,"libftdi error set chunksize A\n" );
-//    }
+    //    if ( ftdi_read_data_set_chunksize ( CAM10A, 1 << 14 ) < 0 )
+    //    {
+    //        fprintf ( stderr,"libftdi error set chunksize A\n" );
+    //    }
 
     if ( ftdi_write_data_set_chunksize ( CAM10B, 256 ) < 0 )
     {
@@ -180,7 +176,7 @@ bool cameraConnect()
     {
         resetchip();
         /*
-        Snapshot Mode—default is 0 (continuous mode).
+        Snapshot Mode — default is 0 (continuous mode).
         1 = enable (wait for TRIGGER; TRIGGER can come from outside signal (TRIGGER pin on the sensor)
         or from serial interface register restart, i.e. programming a “1” to bit 0 of Reg0x0B
         */
@@ -229,7 +225,7 @@ bool cameraDisconnect (void)
 
     isConnected = false;
     if (FT_OP_flag)
-        fprintf ( stderr, "FTDI disconnected successfully\n" );
+        fprintf ( stderr, "FTDI disconnected\n" );
     else
         fprintf ( stderr, "FTDI disconnect failed!\n" );
     return FT_OP_flag;
@@ -252,24 +248,23 @@ bool cameraStartExposure(int startY, int numY, double duration, int gain, uint16
 
     imageReady = false;
     errorReadFlag = false;
-    //cameraState = cameraWaiting;
     cameraState = cameraExposing;
     blevel= sblevel;
     cameraSetGain(gain);
     cameraSetOffset(offset, autoOffset);
     cameraSetBlevel(blevel);
 
+#ifdef TESTING
     writes(0x32, Pattern); // Test pattern
     writes(0x07, 0x42); // Use test data - 0x42, default 0x02
+#endif
 
-    //dlit1 = round(duration*1000)+1000;
     x = round(100 * duration * 1000 / 13);
-    writes(0x09, x); // Number of rows of integration — default = 0x0419 (1049), see datasheet
+    writes(0x09, x); // Number of rows of integration — default = 0x0419 (1049), see datasheet!
     zad = round(duration * 1000 - 40);
     if (zad < 0)
-    {
         zad = 0;
-    }
+
     if (readframe(0, CameraWidth, startY, numY, overscan))
     {
         imageReady = true;
@@ -282,6 +277,13 @@ bool cameraStartExposure(int startY, int numY, double duration, int gain, uint16
         fprintf ( stderr,"Error readframe()\n" );
         return false;
     }
+}
+
+/*===========================================================================*/
+
+bool cameraSetBaudrateA(int val)
+{
+    return cameraSetBaudrate (CAM10A, val );
 }
 
 /*===========================================================================*/
@@ -452,7 +454,7 @@ void *posExecute ( void *arg )
 
         buf = ftdi_read_data_modified( CAM10A, bufim, kolbyte);
 
-        fprintf( stderr,"ftdi_read_data, data size= %d, %d, %d\n", buf, sizeof(bufim), kolbyte );
+        fprintf( stderr,"ftdi_read_data was read %d bytes\n", buf);
     }
     else
     {
@@ -461,7 +463,7 @@ void *posExecute ( void *arg )
     kbyte = buf;
     if (buf == kolbyte)
     {
-        fprintf( stderr,"buf = kolbyte\n" );
+        fprintf( stderr,"all data read successfully!\n" );
 
 
         for (y=0; y<= sdy-1; y++)
@@ -488,11 +490,8 @@ void *posExecute ( void *arg )
         //if FT_Q_Bytes > 0 then Purge_USB_Device(FT_CAM10A,FT_PURGE_RX);
     }
 
-
-    //hev.SetEvent;
     cameraState = cameraDownload;
     cameraState = cameraIdle;
-    //imageReady = true; //moved upper
     ftdi_usb_purge_rx_buffer ( CAM10A );
     ( void ) arg;
     pthread_exit(NULL);

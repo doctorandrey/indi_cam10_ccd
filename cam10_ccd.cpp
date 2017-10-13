@@ -20,8 +20,6 @@
     refer to the INDI Generic CCD driver template in INDI SVN (under 3rdparty).
 */
 
-#define TESTING
-
 #include <sys/time.h>
 #include <memory>
 #include <math.h>
@@ -111,12 +109,12 @@ bool Cam10CCD::ISNewNumber(const char *dev, const char *name,
             IUUpdateNumber(&BaudrateNP, values, names, n);
             BaudrateNP.s = IPS_OK;
             IDSetNumber(&BaudrateNP, NULL);
-//            if (!cameraSetBaudrate(BaudrateN[0].value))
-//            {
-//                BaudrateNP.s = IPS_BUSY;
-//                IDMessage(getDeviceName(), "Cam10 set baudrate Failed!");
-//            } else
-//                IDMessage(getDeviceName(), "Cam10 set baudrate = %d",(int) BaudrateN[0].value);
+            if (!cameraSetBaudrateA(BaudrateN[0].value))
+            {
+                BaudrateNP.s = IPS_BUSY;
+                IDMessage(getDeviceName(), "Cam10 set baudrate Failed!");
+            } else
+                IDMessage(getDeviceName(), "Cam10 set baudrate = %d",(int) BaudrateN[0].value);
             return true;
         }
 
