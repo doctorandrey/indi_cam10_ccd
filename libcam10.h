@@ -1,12 +1,12 @@
 #ifndef __LIBCAM10_H__
 #define __LIBCAM10_H__
 
-#define TESTING
+//#define TESTING
 
 #define CAM10A_BAUDRATE 20
 #define CAM10B_BAUDRATE 5
-#define CAM10_GAIN      0
-#define CAM10_OFFSET    0
+//#define CAM10_GAIN      5
+//#define CAM10_OFFSET    0
 #define CAM10_LATENCYA  2
 #define CAM10_LATENCYB  2
 #define CAM10_TIMERA    250 // USB Read Timeout
@@ -18,7 +18,10 @@
 extern "C" {
 #endif
 
-unsigned int Pattern;
+unsigned int    Pattern;
+unsigned int    CAM10_Gain;
+int             CAM10_Offset;
+bool            CAM10_AutoOffset;
 
 bool cameraConnect(void);
 bool cameraDisconnect(void); 

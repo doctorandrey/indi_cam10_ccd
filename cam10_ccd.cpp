@@ -90,6 +90,7 @@ bool Cam10CCD::ISNewNumber(const char *dev, const char *name,
             GainNP.s = IPS_OK;
             IDSetNumber(&GainNP, NULL);
             cameraSetGain (GainN[0].value);
+            CAM10_Gain = GainN[0].value;
             IDMessage(getDeviceName(), "Cam10 set gain = %d",(int) GainN[0].value);
             return true;
         }
@@ -100,6 +101,7 @@ bool Cam10CCD::ISNewNumber(const char *dev, const char *name,
             OffsetNP.s = IPS_OK;
             IDSetNumber(&OffsetNP, NULL);
             cameraSetOffset (OffsetN[0].value, false);
+            CAM10_Offset = OffsetN[0].value;
             IDMessage(getDeviceName(), "Cam10 set offset = %d",(int) OffsetN[0].value);
             return true;
         }
@@ -203,8 +205,10 @@ bool Cam10CCD::ISNewSwitch (const char *dev, const char *name,
             DEBUGF(INDI::Logger::DBG_SESSION, "AutoOffset is now %s", AutoOffsetS[currentAOffsetIndex].label);
             if (!strcmp(AutoOffsetS[currentAOffsetIndex].name, "AUTOOFFSET_ON")) {
                 AutoOffsetSP.s = IPS_OK;
+                CAM10_AutoOffset = true;
             } else {
                 AutoOffsetSP.s = IPS_IDLE;
+                CAM10_AutoOffset = false;
             }
 
             IDSetSwitch(&AutoOffsetSP, NULL);
@@ -276,7 +280,7 @@ bool Cam10CCD::initProperties()
     const short maxBaudrate = 240;*/
 
     /* Add Gain number property (gs) */
-    IUFillNumber(GainN, "GAIN", "Gain", "%g", 0, 15, 1, CAM10_GAIN);
+    IUFillNumber(GainN, "GAIN", "Gain", "%g", 0, 15, 1, CAM10_Gain);
     IUFillNumberVector(&GainNP, GainN, 1, getDeviceName(),"GAIN",
                        "Gain", MAIN_CONTROL_TAB, IP_RW, 0, IPS_IDLE);
 
@@ -287,7 +291,7 @@ bool Cam10CCD::initProperties()
                        "Auto Offset", MAIN_CONTROL_TAB, IP_RW, ISR_1OFMANY, 60, IPS_IDLE);
 
     /* Add Offset number property (gs) */
-    IUFillNumber(OffsetN, "OFFSET", "Offset", "%g", -63, 63, 1, CAM10_OFFSET);
+    IUFillNumber(OffsetN, "OFFSET", "Offset", "%g", -63, 63, 1, CAM10_Offset);
     IUFillNumberVector(&OffsetNP, OffsetN, 1, getDeviceName(),"OFFSET",
                        "Offset", MAIN_CONTROL_TAB, IP_RW, 0, IPS_IDLE);
 
@@ -396,7 +400,7 @@ bool Cam10CCD::StartExposure(float duration)
 
     //cameraStartExposure(1,0,0,3000,2000, duration,true);
     //int r = cameraStartExposure(PrimaryCCD.getBinX(),PrimaryCCD.getSubX(),PrimaryCCD.getSubY(),PrimaryCCD.getSubW(),PrimaryCCD.getSubH(), duration, true);
-    expResult = cameraStartExposure(0, 1024, duration, 15, 10, false, 10, false);
+    expResult = cameraStartExposure(0, 1024, duration, CAM10_Gain, CAM10_Offset, CAM10_AutoOffset, 0, false);
 
     gettimeofday(&ExpStart,NULL);
 
@@ -477,10 +481,7 @@ void Cam10CCD::TimerHit()
         else
             // Just update time left in client
             PrimaryCCD.setExposureLeft(timeleft);
-
     }
-
-
     SetTimer(POLLMS);
     return;
 }
@@ -496,22 +497,14 @@ void Cam10CCD::grabImage()
     //int row_size   = PrimaryCCD.getSubW() / PrimaryCCD.getBinX() * PrimaryCCD.getBPP() / 8;
     int height = PrimaryCCD.getSubH() / PrimaryCCD.getBinY();
 
-
     IDMessage(getDeviceName(), "grabImage width=%d height=%d BPP=%d\n", width, height, PrimaryCCD.getBPP() );
 
-
     while (!cameraGetImageReady() ); // waiting image
-
 
     //cameraGetImage(image);
     //*bufim = (unsigned short *) image;
     //image = *bufim;
     PrimaryCCD.setFrameBuffer(image);
-
-    //    for (int i = 0; i < height; i++)
-    //        for (int j = 0; j < row_size; j++)
-    //            image[i * row_size + j] = rand() % 255;
-
 
     int k = 0;
     uint8_t *img;
@@ -524,7 +517,6 @@ void Cam10CCD::grabImage()
             k++;
         }
 
-
     IDMessage(getDeviceName(), "Download complete.");
 
     // Let INDI::CCD know we're done filling the image buffer
@@ -532,13 +524,12 @@ void Cam10CCD::grabImage()
 }
 
 
-
 #ifdef TESTING
 
 int main(int argc, char *argv[])
 {
     int opt;
-    int baud = 10;
+    int baud = 20;
     double exp = 1;
     while ((opt = getopt (argc, argv, "e:b:p:")) != -1)
     {
@@ -561,11 +552,11 @@ int main(int argc, char *argv[])
     }
 
 
-    if (cameraConnect() == EXIT_SUCCESS) {
+    if (cameraConnect()) {
         //cameraSetBaudrate(baud);
         //cameraSetOffset(0);
         //cameraSetGain(0);
-        int r = cameraStartExposure(0, 1024, exp, 15, 10, false, 10, false);
+        int r = cameraStartExposure(0, 1024, exp, 5, 10, true, 10, false);
         while (!cameraGetImageReady())
             //  fprintf(stdout,"wait\n");
             ; // waiting image

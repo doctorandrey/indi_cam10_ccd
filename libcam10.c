@@ -138,10 +138,10 @@ bool cameraConnect()
     //debug!
     //if (ftdi_read_data_set_chunksize (CAM8A,256*1)<0 ) fprintf(stderr,"libftdi error set chunksize A\n");
 
-    //    if ( ftdi_read_data_set_chunksize ( CAM10A, 1 << 14 ) < 0 )
-    //    {
-    //        fprintf ( stderr,"libftdi error set chunksize A\n" );
-    //    }
+    if ( ftdi_read_data_set_chunksize ( CAM10A, 16384 ) < 0 )
+    {
+        fprintf ( stderr,"libftdi error set chunksize A\n" );
+    }
 
     if ( ftdi_write_data_set_chunksize ( CAM10B, 256 ) < 0 )
     {
@@ -174,7 +174,7 @@ bool cameraConnect()
 
     if (FT_OP_flag)
     {
-        resetchip();
+        //resetchip();
         /*
         Snapshot Mode — default is 0 (continuous mode).
         1 = enable (wait for TRIGGER; TRIGGER can come from outside signal (TRIGGER pin on the sensor)
@@ -182,7 +182,6 @@ bool cameraConnect()
         */
         writes(0x1E,0x8100); // 1000 0001 0000 0000 // Read Mode 1 bit8 -> Snapshot Mode
         writes(0x20,0x0104); // 0000 0001 0000 0100 // Read Mode 2 (was 0104 ??)
-        cameraSetGain(15);
         writes(0x60,0);
         writes(0x61,0);
         writes(0x63,blevel);
@@ -428,9 +427,10 @@ bool cameraSetOffset (uint16_t val, bool aut)
 bool cameraSetGain(int val)
 {
     const uint8_t gain[] = {0x08,0x10,0x18,0x20,0x54,0x58,0x5c,0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67};
-    if ((val > 15) || (val < 0))
+    fprintf( stderr,"setting gain idx=%d, data=%d \n", val, gain[val]);
+    if ((val >= 15) || (val < 0))
     {
-        val = 15;
+        val = 14;
     }
     writes(0x35, gain[val]); //Global gain register
     return true;
@@ -524,12 +524,12 @@ bool readframe (int x0, int dx, int y0, int dy, bool komp)
     }
     fprintf(stderr, "...\n");
 
-    FILE * fileID;
-    fileID = fopen("framedata_out.txt", "w");
-    for (int i = 0; i < sizeof(bufim); i++) {
-        fprintf(fileID, "%02x ", bufim[i]);
-    }
-    fclose(fileID);
+//    FILE * fileID;
+//    fileID = fopen("framedata_out.txt", "w");
+//    for (int i = 0; i < sizeof(bufim); i++) {
+//        fprintf(fileID, "%02x ", bufim[i]);
+//    }
+//    fclose(fileID);
 
     if (bufa < 1)
     {
