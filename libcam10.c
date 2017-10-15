@@ -135,9 +135,6 @@ bool cameraConnect()
     //timeouts - latency
     cameraSetLibftdiTimers ( CAM10_LATENCYA, CAM10_LATENCYB, CAM10_TIMERA, CAM10_TIMERB );
 
-    //debug!
-    //if (ftdi_read_data_set_chunksize (CAM8A,256*1)<0 ) fprintf(stderr,"libftdi error set chunksize A\n");
-
     if ( ftdi_read_data_set_chunksize ( CAM10A, 16384 ) < 0 )
     {
         fprintf ( stderr,"libftdi error set chunksize A\n" );
@@ -254,8 +251,14 @@ bool cameraStartExposure(int startY, int numY, double duration, int gain, uint16
     cameraSetBlevel(blevel);
 
 #ifdef TESTING
+    /*
+    The value sent to the D OUT [9:0] pins will alternate between the Test Data register (Reg0x32) in even
+    columns and the inverse of the Test Data register for odd columns. The output “image” will have
+    the same width, height, and frame rate as it would otherwise have. No digital processing (gain or
+    offset) is applied to the data. When clear (the default), sampled pixel values are output normally.
+    */
     writes(0x32, Pattern); // Test pattern
-    writes(0x07, 0x42); // Use test data - 0x42, default 0x02
+    writes(0x07, 0x42); // Use test data - set bit 6 of the 0x42, default 0x02
 #endif
 
     x = round(100 * duration * 1000 / 13);
@@ -524,12 +527,26 @@ bool readframe (int x0, int dx, int y0, int dy, bool komp)
     }
     fprintf(stderr, "...\n");
 
-//    FILE * fileID;
-//    fileID = fopen("framedata_out.txt", "w");
-//    for (int i = 0; i < sizeof(bufim); i++) {
-//        fprintf(fileID, "%02x ", bufim[i]);
-//    }
-//    fclose(fileID);
+#ifdef TESTING
+    fprintf(stderr, "test image integrity check...\n");
+
+    for (int i = 0; i < sizeof(bufim); i++) {
+        if (i % 2 == 0) {
+            if (bufim[i] != Pattern)
+                fprintf(stderr, "%02x:%02x ", i, bufim[i]);
+        } else
+            if (bufim[i] != ~Pattern)
+                fprintf(stderr, "%02x:%02x ", i, bufim[i]);
+    }
+    fprintf(stderr, "\n");
+#endif
+
+    //    FILE * fileID;
+    //    fileID = fopen("framedata_out.txt", "w");
+    //    for (int i = 0; i < sizeof(bufim); i++) {
+    //        fprintf(fileID, "%02x ", bufim[i]);
+    //    }
+    //    fclose(fileID);
 
     if (bufa < 1)
     {
