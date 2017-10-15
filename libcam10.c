@@ -535,7 +535,7 @@ bool readframe (int x0, int dx, int y0, int dy, bool komp)
             if (bufim[i] != Pattern >> 2)
                 fprintf(stderr, "%02x:%02x ", i, bufim[i]);
         } else
-            if (bufim[i] != ~(Pattern >> 2)
+            if (bufim[i] != ~(Pattern >> 2))
                 fprintf(stderr, "%02x:%02x ", i, bufim[i]);
     }
     fprintf(stderr, "\n");
