@@ -532,10 +532,10 @@ bool readframe (int x0, int dx, int y0, int dy, bool komp)
 
     for (int i = 0; i < sizeof(bufim); i++) {
         if (i % 2 == 0) {
-            if (bufim[i] != Pattern)
+            if (bufim[i] != Pattern >> 2)
                 fprintf(stderr, "%02x:%02x ", i, bufim[i]);
         } else
-            if (bufim[i] != ~Pattern)
+            if (bufim[i] != ~(Pattern >> 2)
                 fprintf(stderr, "%02x:%02x ", i, bufim[i]);
     }
     fprintf(stderr, "\n");
