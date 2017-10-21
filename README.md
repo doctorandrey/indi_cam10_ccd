@@ -21,7 +21,7 @@ Before starting:
 >sudo service udev restart  
 
 To use it as stand alone application uncomment:  
->define TESTING  
+>#define TESTING  
 
 Then run it:  
 >./indi_cam10_ccd -p 155 -e 0.5  
