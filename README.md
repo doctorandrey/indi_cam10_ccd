@@ -17,8 +17,8 @@ See:
 - http://www.fishcamp.com/pdf/mt9m001_1300_mono.pdf
 
 Before starting:
->sudo cp 99-cam10.rules /etc/udev/rules.d/
->sudo service udev restart
+>sudo cp 99-cam10.rules /etc/udev/rules.d/  
+>sudo service udev restart  
 
 To use it as stand alone application uncomment:
 >define TESTING
