@@ -22,8 +22,10 @@ Before starting:
 
 To use it as stand alone application uncomment:  
 >define TESTING  
+
 Then run it:  
 >./indi_cam10_ccd -p 155 -e 0.5  
+
 where -p is the hex value of the test pattern, -e exposure duration in seconds (min 0.1 max 1)  
 
 _Andrei_ _Prakapovich_
