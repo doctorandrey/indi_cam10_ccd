@@ -16,4 +16,14 @@ See:
 - https://www.intra2net.com/en/developer/libftdi/documentation/
 - http://www.fishcamp.com/pdf/mt9m001_1300_mono.pdf
 
+Before starting:
+>sudo cp 99-cam10.rules /etc/udev/rules.d/
+>sudo service udev restart
+
+To use it as stand alone application uncomment:
+>define TESTING
+Then run it:
+>./indi_cam10_ccd -p 155 -e 0.5
+where -p is the hex value of the test pattern, -e exposure duration in seconds (min 0.1 max 1)
+
 _Andrei_ _Prakapovich_
