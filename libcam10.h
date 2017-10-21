@@ -3,16 +3,16 @@
 
 //#define TESTING
 
-#define CAM10A_BAUDRATE 20
-#define CAM10B_BAUDRATE 5
-//#define CAM10_GAIN      5
-//#define CAM10_OFFSET    0
-#define CAM10_LATENCYA  2
-#define CAM10_LATENCYB  2
-#define CAM10_TIMERA    250 // USB Read Timeout
-#define CAM10_TIMERB    100 // USB Write Timeout
-#define BAUDRATE_MULT   10000
-#define FT_OUT_BUFF     0x10000
+#define CAM10A_BAUDRATE     20
+#define CAM10B_BAUDRATE     5
+#define CAM10_READCHUNK     16384
+#define CAM10_WRITECHUNK    256
+#define CAM10_LATENCYA      2
+#define CAM10_LATENCYB      2
+#define CAM10_TIMERA        250 // USB Read Timeout
+#define CAM10_TIMERB        100 // USB Write Timeout
+#define BAUDRATE_MULT       10000
+#define FT_OUT_BUFF         0x10000
 
 #ifdef __cplusplus
 extern "C" {

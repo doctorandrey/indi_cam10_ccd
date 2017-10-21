@@ -272,13 +272,6 @@ bool Cam10CCD::initProperties()
     // Must init parent properties first!
     INDI::CCD::initProperties();
 
-    /*const short minGain = 0;
-    const short maxGain = 63;
-    const short minOffset = -127;
-    const short maxOffset = 127;
-    const short minBaudrate = 80;
-    const short maxBaudrate = 240;*/
-
     /* Add Gain number property (gs) */
     IUFillNumber(GainN, "GAIN", "Gain", "%g", 0, 15, 1, CAM10_Gain);
     IUFillNumberVector(&GainNP, GainN, 1, getDeviceName(),"GAIN",
@@ -398,7 +391,6 @@ bool Cam10CCD::StartExposure(float duration)
     // Since we have only have one CCD with one chip, we set the exposure duration of the primary CCD
     PrimaryCCD.setExposureDuration(duration);
 
-    //cameraStartExposure(1,0,0,3000,2000, duration,true);
     //int r = cameraStartExposure(PrimaryCCD.getBinX(),PrimaryCCD.getSubX(),PrimaryCCD.getSubY(),PrimaryCCD.getSubW(),PrimaryCCD.getSubH(), duration, true);
     expResult = cameraStartExposure(0, 1024, duration, CAM10_Gain, CAM10_Offset, CAM10_AutoOffset, 0, false);
 
@@ -537,6 +529,11 @@ int main(int argc, char *argv[])
         {
         case 'e':
             exp = atof (optarg);
+            if ((exp > 1) || (exp < 0.1))
+            {
+                fprintf(stderr, "Exposure min: 0.1 sec, max: 1 sec!\n");
+                exit(EXIT_FAILURE);
+            }
             break;
         case 'b':
             baud = atoi (optarg);
@@ -546,24 +543,19 @@ int main(int argc, char *argv[])
             break;
 
         default: /* '?' */
-            fprintf(stderr, "Usage: %s [-e exposure] [-b baudrate] [-p pattern]\n", argv[0]);
+            fprintf(stderr, "Usage: %s [-e exposure 0.1 - 1 sec] [-b baudrate X / 10000] [-p pattern 11:2 bits]\n", argv[0]);
+            fprintf(stderr, "Example: %s -e 1 -b 20 -p 3FF\n", argv[0]);
             exit(EXIT_FAILURE);
         }
     }
 
 
     if (cameraConnect()) {
-        //cameraSetBaudrate(baud);
-        //cameraSetOffset(0);
-        //cameraSetGain(0);
-        int r = cameraStartExposure(0, 1024, exp, 5, 10, true, 10, false);
+
+        cameraStartExposure(0, 1024, exp, 5, 10, true, 10, false);
+
         while (!cameraGetImageReady())
-            //  fprintf(stdout,"wait\n");
-            ; // waiting image
-        //for (int i=0; i < 10 ; i++)
-        //  for (int j=0; j < 10; j++)
-        //      fprintf(stdout,"img %d/%d:%d\n",i,j,cameraGetImage(i,j));
-        cameraDisconnect();
+            cameraDisconnect();
     }
 
 }

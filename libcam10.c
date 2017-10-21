@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <sched.h>
 #include <sys/time.h>
 #include <math.h>
 #include "libcam10.h"
@@ -86,28 +87,28 @@ bool cameraConnect()
         //fprintf ( stderr,"libftdi error open interface A\n" );
         fprintf(stderr, "unable to open ftdi device: %d (%s)\n", ret, ftdi_get_error_string(CAM10A));
         FT_OP_flag = false;
-        return EXIT_FAILURE;
+        return false;
     }
     if ((ret = ftdi_usb_open ( CAM10B, 0x0403, 0x6010 )) < 0 )
     {
         //fprintf ( stderr,"libftdi error open interface B\n" );
         fprintf(stderr, "unable to open ftdi device: %d (%s)\n", ret, ftdi_get_error_string(CAM10B));
         FT_OP_flag = false;
-        return EXIT_FAILURE;
+        return false;
     }
 
     if ((ret = ftdi_usb_reset(CAM10A)) < 0 )
     {
         fprintf(stderr, "unable to reset usb device A: %d (%s)\n", ret, ftdi_get_error_string(CAM10A));
         FT_OP_flag = false;
-        return EXIT_FAILURE;
+        return false;
     }
 
     if ((ret = ftdi_usb_reset(CAM10B)) < 0 )
     {
         fprintf(stderr, "unable to reset usb device B: %d (%s)\n", ret, ftdi_get_error_string(CAM10B));
         FT_OP_flag = false;
-        return EXIT_FAILURE;
+        return false;
     }
 
     //    if ( ftdi_set_bitmode ( CAM10A, 0x00, BITMODE_RESET ) < 0 )
@@ -129,18 +130,18 @@ bool cameraConnect()
               CAM10A->baudrate, CAM10B->baudrate, CAM10A->usb_read_timeout, CAM10B->usb_write_timeout );
 
     // Baudrate
-    cameraSetBaudrate ( CAM10A, CAM10A_BAUDRATE );
-    cameraSetBaudrate ( CAM10B, CAM10B_BAUDRATE );
+    FT_OP_flag = cameraSetBaudrate ( CAM10A, CAM10A_BAUDRATE );
+    FT_OP_flag = cameraSetBaudrate ( CAM10B, CAM10B_BAUDRATE );
 
     //timeouts - latency
-    cameraSetLibftdiTimers ( CAM10_LATENCYA, CAM10_LATENCYB, CAM10_TIMERA, CAM10_TIMERB );
+    FT_OP_flag = cameraSetLibftdiTimers ( CAM10_LATENCYA, CAM10_LATENCYB, CAM10_TIMERA, CAM10_TIMERB );
 
-    if ( ftdi_read_data_set_chunksize ( CAM10A, 16384 ) < 0 )
+    if ( ftdi_read_data_set_chunksize ( CAM10A, CAM10_READCHUNK ) < 0 )
     {
         fprintf ( stderr,"libftdi error set chunksize A\n" );
     }
 
-    if ( ftdi_write_data_set_chunksize ( CAM10B, 256 ) < 0 )
+    if ( ftdi_write_data_set_chunksize ( CAM10B, CAM10_WRITECHUNK ) < 0 )
     {
         fprintf ( stderr,"libftdi error set chunksize B\n" );
     }
@@ -171,7 +172,7 @@ bool cameraConnect()
 
     if (FT_OP_flag)
     {
-        //resetchip();
+        resetchip();
         /*
         Snapshot Mode — default is 0 (continuous mode).
         1 = enable (wait for TRIGGER; TRIGGER can come from outside signal (TRIGGER pin on the sensor)
@@ -189,7 +190,7 @@ bool cameraConnect()
     isConnected = FT_OP_flag;
     errorReadFlag = false;
     cameraState = cameraIdle;
-    if ( FT_OP_flag == false )
+    if ( !FT_OP_flag )
     {
         ftdi_free ( CAM10B );
         ftdi_free ( CAM10A );
@@ -455,8 +456,8 @@ void *posExecute ( void *arg )
     if (!errorWriteFlag)
     {
 
+        memset(bufim, 0, sizeof(bufim));
         buf = ftdi_read_data_modified( CAM10A, bufim, kolbyte);
-
         fprintf( stderr,"ftdi_read_data was read %d bytes\n", buf);
     }
     else
@@ -515,8 +516,19 @@ bool readframe (int x0, int dx, int y0, int dy, bool komp)
     sdy = dy;
     sy0 = y0;
 
+    pthread_attr_t tattr;
+    int ret;
+    int newprio = 20;
+    struct sched_param param;
+
     pthread_t t1;
-    pthread_create ( &t1, NULL, posExecute, NULL );
+
+    ret = pthread_attr_init (&tattr);
+    ret = pthread_attr_getschedparam (&tattr, &param);
+    param.sched_priority = newprio;
+    ret = pthread_attr_setschedparam (&tattr, &param);
+
+    pthread_create ( &t1, &tattr, posExecute, NULL );
     pthread_join(t1,NULL);
 
     fprintf(stderr, "------ first 100 bytes dump ------\n");
@@ -528,17 +540,30 @@ bool readframe (int x0, int dx, int y0, int dy, bool komp)
     fprintf(stderr, "...\n");
 
 #ifdef TESTING
+    int fail = 0;
+    unsigned int mask = 0xFF;
+    unsigned int sh_pattern = Pattern >> 2;
+    unsigned int inv_pattern = (sh_pattern & ~mask) | (~sh_pattern & mask);
     fprintf(stderr, "test image integrity check...\n");
+    fprintf(stderr, "test pattern: %02x ~ %02x \n", sh_pattern, inv_pattern);
 
     for (int i = 0; i < sizeof(bufim); i++) {
         if (i % 2 == 0) {
-            if (bufim[i] != Pattern >> 2)
+            if (bufim[i] != inv_pattern) {
                 fprintf(stderr, "%02x:%02x ", i, bufim[i]);
+                fail++;
+            }
         } else
-            if (bufim[i] != ~(Pattern >> 2))
+            if (bufim[i] != sh_pattern) {
                 fprintf(stderr, "%02x:%02x ", i, bufim[i]);
+                fail++;
+            }
     }
     fprintf(stderr, "\n");
+    if (fail > 0)
+        fprintf(stderr, "failed read %d bytes\n", fail);
+    else
+        fprintf(stderr, "frame data ok\n");
 #endif
 
     //    FILE * fileID;
